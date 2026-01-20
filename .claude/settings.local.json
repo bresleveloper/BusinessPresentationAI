@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(timeout 3 node:*)",
+      "Bash(taskkill:*)",
+      "Bash(dir /s /b)",
+      "Bash(findstr:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

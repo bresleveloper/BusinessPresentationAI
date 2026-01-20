@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BizPrez - AI Business Presentation Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>BizPrez</h1>
+    <p>AI-Powered Business Presentation Generator</p>
+  </header>
+
+  <main>
+    <!-- Step 1: Business Info Form -->
+    <section id="business-form" class="card">
+      <h2>Tell us about your business</h2>
+      <div class="form-group">
+        <label for="profession">Your Profession</label>
+        <input type="text" id="profession" placeholder="e.g., Electrician, Plumber, Consultant">
+      </div>
+      <div class="form-group">
+        <label for="description">What do you do?</label>
+        <textarea id="description" rows="4" placeholder="Describe your business, services, and what you offer to clients..."></textarea>
+      </div>
+      <button id="start-interview" class="btn btn-primary">Start Interview</button>
+    </section>
+
+    <!-- Step 2: Interview Chat -->
+    <section id="interview" class="card hidden">
+      <h2>Discovery Interview</h2>
+      <p class="subtitle">Answer a few questions to help us understand what makes your business unique</p>
+      <div id="chat-messages"></div>
+      <div class="chat-input">
+        <input type="text" id="user-input" placeholder="Type your answer...">
+        <button id="send-answer" class="btn btn-primary">Send</button>
+      </div>
+      <button id="generate-btn" class="btn btn-success hidden">Generate Presentations</button>
+    </section>
+
+    <!-- Loading State -->
+    <section id="loading" class="card hidden">
+      <div class="loading-spinner"></div>
+      <p>Generating your presentations...</p>
+      <p class="subtitle">Our AI is crafting three different approaches for your business</p>
+    </section>
+
+    <!-- Step 3: Results -->
+    <section id="results" class="hidden">
+      <h2>Your Business Presentations</h2>
+      <p class="subtitle">Three approaches spanning different business eras</p>
+      <div id="presentations">
+        <div class="presentation" id="pres-80s">
+          <div class="pres-header">
+            <h3>1980s Approach</h3>
+            <span class="era-tag">Credentials & Authority</span>
+          </div>
+          <div class="content"></div>
+        </div>
+        <div class="presentation" id="pres-2000s">
+          <div class="pres-header">
+            <h3>2000s Approach</h3>
+            <span class="era-tag">Value & Efficiency</span>
+          </div>
+          <div class="content"></div>
+        </div>
+        <div class="presentation recommended" id="pres-2020s">
+          <div class="pres-header">
+            <h3>2020s Approach</h3>
+            <span class="era-tag recommended-tag">Recommended</span>
+          </div>
+          <div class="content"></div>
+        </div>
+      </div>
+      <button id="start-over" class="btn btn-secondary">Start Over</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>Powered by AI | Built with vanilla Node.js</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
