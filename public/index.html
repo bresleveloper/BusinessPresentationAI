@@ -1,84 +1,177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BizPrez - AI Business Presentation Generator</title>
+  <title>BizPrez - צור מצגת 30 שניות - "מצגת מעלית" - עם בינה מלאכותית</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header>
     <h1>BizPrez</h1>
-    <p>AI-Powered Business Presentation Generator</p>
+    <p>צור מצגת 30 שניות - "מצגת מעלית" - עם בינה מלאכותית</p>
   </header>
 
   <main>
+    <!-- Auth Section -->
+    <section id="auth-section" class="card">
+      <h2>התחברות</h2>
+      <p class="subtitle">התחברו כדי ליצור מצגות (3 קרדיטים חינם להתחלה!)</p>
+
+      <div id="auth-forms">
+        <!-- Login/Signup Tabs -->
+        <div class="auth-tabs">
+          <button id="tab-login" class="auth-tab active">התחברות</button>
+          <button id="tab-signup" class="auth-tab">הרשמה</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="login-username">שם משתמש</label>
+            <input type="text" id="login-username" placeholder="שם משתמש">
+          </div>
+          <div class="form-group">
+            <label for="login-password">סיסמה</label>
+            <input type="password" id="login-password" placeholder="סיסמה">
+          </div>
+          <button id="login-btn" class="btn btn-primary btn-full">התחברו</button>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signup-form" class="auth-form hidden">
+          <div class="form-group">
+            <label for="signup-username">שם משתמש</label>
+            <input type="text" id="signup-username" placeholder="שם משתמש">
+          </div>
+          <div class="form-group">
+            <label for="signup-password">סיסמה</label>
+            <input type="password" id="signup-password" placeholder="סיסמה (לפחות 6 תווים)">
+          </div>
+          <button id="signup-btn" class="btn btn-primary btn-full">הירשמו</button>
+        </div>
+
+        <div class="auth-divider hidden">
+          <span>או</span>
+        </div>
+
+        <button id="google-login-btn" class="btn btn-google btn-full hidden">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          התחברו עם Google
+        </button>
+      </div>
+
+      <div id="auth-error" class="auth-error hidden"></div>
+    </section>
+
+    <!-- User Info Bar (shown when logged in) -->
+    <section id="user-bar" class="user-bar hidden">
+      <div class="user-info">
+        <span id="user-email"></span>
+        <span class="credits-badge">קרדיטים: <strong id="user-credits">0</strong></span>
+      </div>
+      <button id="logout-btn" class="btn btn-secondary btn-small">
+        <span class="logout-text">התנתקות</span>
+        <svg class="logout-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </section>
+
     <!-- Step 1: Business Info Form -->
-    <section id="business-form" class="card">
-      <h2>Tell us about your business</h2>
+    <section id="business-form" class="card hidden">
+      <h2>ספרו לנו על העסק שלכם</h2>
       <div class="form-group">
-        <label for="profession">Your Profession</label>
-        <input type="text" id="profession" placeholder="e.g., Electrician, Plumber, Consultant">
+        <label for="profession">המקצוע שלכם</label>
+        <input type="text" id="profession" placeholder="לדוגמה: חשמלאי, שרברב, יועץ">
       </div>
       <div class="form-group">
-        <label for="description">What do you do?</label>
-        <textarea id="description" rows="4" placeholder="Describe your business, services, and what you offer to clients..."></textarea>
+        <label for="description"> מה אתם עושים? ומי אתם?</label>
+        <textarea id="description" rows="4" 
+          placeholder="תארו את העסק שלכם, השירותים והערך שאתם מציעים ללקוחות, והכי חשוב - מה מיוחד בכם..."></textarea>
       </div>
-      <button id="start-interview" class="btn btn-primary">Start Interview</button>
+      <div class="form-group disclaimer">
+        <label>
+          <input type="checkbox" id="disclaimer-checkbox">
+          האתר אינו אחראי לתוצאות. התוצאות נוצרות על ידי בינה מלאכותית ואינן באחריות האתר. באחריות המשתמש לוודא את אמינות התוצאות.
+        </label>
+      </div>
+      <div class="tooltip-wrapper show-tooltip">
+        <button id="start-interview" class="btn btn-primary" disabled>התחילו ראיון</button>
+        <span class="tooltip-text">יש לאשר את תנאי השימוש</span>
+      </div>
     </section>
 
     <!-- Step 2: Interview Chat -->
     <section id="interview" class="card hidden">
-      <h2>Discovery Interview</h2>
-      <p class="subtitle">Answer a few questions to help us understand what makes your business unique</p>
+      <h2>ראיון גילוי</h2>
+      <p class="subtitle">ענו על כמה שאלות כדי שנבין מה מייחד את העסק שלכם</p>
       <div id="chat-messages"></div>
       <div class="chat-input">
-        <input type="text" id="user-input" placeholder="Type your answer...">
-        <button id="send-answer" class="btn btn-primary">Send</button>
+        <input type="text" id="user-input" placeholder="הקלידו את התשובה שלכם...">
+        <button id="send-answer" class="btn btn-primary">שלחו</button>
       </div>
-      <button id="generate-btn" class="btn btn-success hidden">Generate Presentations</button>
+      <button id="generate-btn" class="btn btn-success hidden">צרו מצגות</button>
     </section>
 
     <!-- Loading State -->
     <section id="loading" class="card hidden">
       <div class="loading-spinner"></div>
-      <p>Generating your presentations...</p>
-      <p class="subtitle">Our AI is crafting three different approaches for your business</p>
+      <p>מייצרים את המצגות שלכם...</p>
+      <p class="subtitle">הבינה המלאכותית שלנו יוצרת שלוש גישות שונות לעסק שלכם</p>
     </section>
 
     <!-- Step 3: Results -->
     <section id="results" class="hidden">
-      <h2>Your Business Presentations</h2>
-      <p class="subtitle">Three approaches spanning different business eras</p>
+      <h2>המצגות העסקיות שלכם</h2>
+      <p class="subtitle">שלוש גישות מתקופות עסקיות שונות</p>
       <div id="presentations">
         <div class="presentation" id="pres-80s">
           <div class="pres-header">
-            <h3>1980s Approach</h3>
-            <span class="era-tag">Credentials & Authority</span>
+            <h3>גישת שנות ה-80</h3>
+            <span class="era-tag">המומחה הכי גדול</span>
           </div>
           <div class="content"></div>
         </div>
         <div class="presentation" id="pres-2000s">
           <div class="pres-header">
-            <h3>2000s Approach</h3>
-            <span class="era-tag">Value & Efficiency</span>
+            <h3>גישת שנות ה-2000</h3>
+            <span class="era-tag">זול ואמין</span>
           </div>
           <div class="content"></div>
         </div>
         <div class="presentation recommended" id="pres-2020s">
           <div class="pres-header">
-            <h3>2020s Approach</h3>
-            <span class="era-tag recommended-tag">Recommended</span>
+            <h3>גישת שנות ה-2020-2030</h3>
+            <span class="era-tag recommended-tag">אחריות על תוצאה</span>
           </div>
           <div class="content"></div>
         </div>
       </div>
-      <button id="start-over" class="btn btn-secondary">Start Over</button>
+
+      <div class="disclaimer">האתר אינו אחראי על התכנים והתוצאות. באחריות המשתמש לוודא את אמינות התוצאות, או להתאים את ההצעה של הבינה מלאכותית למציאות</div>
+
+      <button id="start-over" class="btn btn-secondary">התחילו מחדש</button>
     </section>
   </main>
 
   <footer>
-    <p>Powered by AI | Built with vanilla Node.js</p>
+    <p>מופעל על ידי בינה מלאכותית | נבנה על ידי Bresleveloper AI</p>
+    <p>התקשר או לחץ לשליחת ואצאפ <a href="https://wa.me/972542634114?text=%D7%92%D7%9D%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%90%D7%AA%D7%A8%20%D7%91%D7%99%D7%A0%D7%94%20%D7%9E%D7%9C%D7%90%D7%9B%D7%95%D7%AA%D7%99%D7%AA">054-263-4114</a></p>
+
+    <ul>
+      <li>
+        <a href="/negishut.html">הצהרת נגישות</a>
+      </li>
+    </ul>
   </footer>
 
   <script src="app.js"></script>

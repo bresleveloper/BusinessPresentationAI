@@ -5,5 +5,40 @@
     "description": "Works at a pharmacy software company as a supplier communications manager",
     "uniqueQualities": "",
     "createdAt": "2026-01-20T22:20:56.049Z"
+  },
+  {
+    "sessionId": "f4bcbcdd-113c-4c3d-b80c-72e2218f2b62",
+    "profession": "מתכנת",
+    "description": "אני לומד על בינה מלאכותית, מחפש עבודות בתכנות",
+    "uniqueQualities": "",
+    "createdAt": "2026-02-05T03:51:42.297Z"
+  },
+  {
+    "sessionId": "6341b002-14a1-47c8-9b05-a6508053455f",
+    "profession": "מתכנת",
+    "description": "אני מתכנת פרילנסר",
+    "uniqueQualities": "",
+    "createdAt": "2026-02-05T04:06:36.458Z"
+  },
+  {
+    "sessionId": "f8a22e1d-096f-4c06-84c7-0ea8f2bd5aad",
+    "profession": "מתכנת",
+    "description": "פרילנסר",
+    "uniqueQualities": "",
+    "createdAt": "2026-02-05T04:11:30.414Z"
+  },
+  {
+    "sessionId": "9d2aea81-2e7d-4e4a-a496-c695f2f03df3",
+    "profession": "מתכנת",
+    "description": "פרילנסר",
+    "uniqueQualities": "",
+    "createdAt": "2026-02-05T04:21:02.101Z"
+  },
+  {
+    "sessionId": "c60b79db-84f3-462b-8647-e8aaf2c30fa3",
+    "profession": "יועץ",
+    "description": "קצת עוזר לעסקים מתחילים",
+    "uniqueQualities": "",
+    "createdAt": "2026-02-05T05:29:35.135Z"
   }
 ]
