@@ -20,7 +20,7 @@ AI-powered tool that interviews you about your business and generates presentati
    npm start
    ```
 
-4. Open http://localhost:3000 in your browser.
+4. Open http://localhost:13001 in your browser.
 
 ## How It Works
 

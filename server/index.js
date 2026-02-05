@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { handleRequest } = require('./router.js');
 
-const PORT = 3000;
+const PORT = 13001;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
 const MIME_TYPES = {
