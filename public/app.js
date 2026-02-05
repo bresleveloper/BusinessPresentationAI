@@ -52,9 +52,15 @@ async function startInterview() {
   const description = document.getElementById('description').value.trim();
 
   if (!profession || !description) {
-    alert('Please fill in both fields');
+    alert('אנא מלאו את שני השדות');
     return;
   }
+
+  const btn = document.getElementById('start-interview');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.textContent = 'טוען...';
 
   try {
     // Create session
@@ -76,8 +82,12 @@ async function startInterview() {
     displayMessage('assistant', interviewData.message);
 
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('שגיאה: ' + err.message);
     console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.textContent = originalText;
   }
 }
 
@@ -86,10 +96,15 @@ async function sendAnswer() {
   const message = userInput.value.trim();
   if (!message) return;
 
+  const btn = document.getElementById('send-answer');
+  const originalText = btn.textContent;
+
   displayMessage('user', message);
   userInput.value = '';
   userInput.disabled = true;
-  document.getElementById('send-answer').disabled = true;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.textContent = 'שולח...';
 
   try {
     const response = await api('/api/respond', 'POST', {
@@ -105,17 +120,25 @@ async function sendAnswer() {
     }
 
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('שגיאה: ' + err.message);
     console.error(err);
   } finally {
     userInput.disabled = false;
-    document.getElementById('send-answer').disabled = false;
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.textContent = originalText;
     userInput.focus();
   }
 }
 
 // Generate all presentations
 async function generatePresentations() {
+  const btn = generateBtn;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.textContent = 'יוצר מצגות...';
+
   showSection(loadingSection);
 
   try {
@@ -132,9 +155,13 @@ async function generatePresentations() {
     showSection(resultsSection);
 
   } catch (err) {
-    alert('Error generating presentations: ' + err.message);
+    alert('שגיאה ביצירת המצגות: ' + err.message);
     console.error(err);
     showSection(interviewSection);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.textContent = originalText;
   }
 }
 

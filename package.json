@@ -1,0 +1,12 @@
+{
+  "name": "bizprez",
+  "version": "1.0.0",
+  "description": "Business presentation generator with AI-powered interviews",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,6 +1,6 @@
 const https = require('https');
 
-const API_KEY = 'sk-or-v1-getYourKey';
+const API_KEY = process.env.OPENROUTER_API_KEY;
 const MODEL = 'x-ai/grok-4.1-fast';
 const API_HOST = 'openrouter.ai';
 const API_PATH = '/api/v1/chat/completions';
