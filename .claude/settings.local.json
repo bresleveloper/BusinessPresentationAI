@@ -14,7 +14,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd button loading states, env config, and project setup\n\n- Add loading feedback to Start Interview, Send, and Generate buttons\n- Move API key to .env file for security\n- Add .gitignore for node_modules, .env, and data files\n- Add package.json with dotenv dependency\n- Add README.md with setup instructions\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push:*)",
       "Bash(npm start)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(ren:*)"
     ]
   }
 }

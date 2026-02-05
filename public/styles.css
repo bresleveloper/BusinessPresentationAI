@@ -17,10 +17,22 @@ body {
 }
 
 header {
-  text-align: center;
-  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
   background: rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-logo {
+  height: 130px;
+  width: auto;
+}
+
+.header-text {
+  text-align: center;
 }
 
 header h1 {
@@ -537,6 +549,15 @@ footer a {color: #4a9eff;}
 
   .card {
     padding: 1.5rem;
+  }
+
+  header {
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .header-logo {
+    height: 80px;
   }
 
   header h1 {
