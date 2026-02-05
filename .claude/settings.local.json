@@ -15,7 +15,9 @@
       "Bash(git push:*)",
       "Bash(npm start)",
       "Bash(npx kill-port:*)",
-      "Bash(ren:*)"
+      "Bash(ren:*)",
+      "Bash(powershell:*)",
+      "Bash(python:*)"
     ]
   }
 }
