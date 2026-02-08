@@ -18,7 +18,9 @@
       "Bash(ren:*)",
       "Bash(powershell:*)",
       "Bash(python:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(ls:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
