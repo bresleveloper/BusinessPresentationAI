@@ -59,15 +59,15 @@
       <div id="auth-forms">
         <!-- Login/Signup Tabs -->
         <div class="auth-tabs">
-          <button id="tab-login" class="auth-tab active">התחברות</button>
-          <button id="tab-signup" class="auth-tab">הרשמה</button>
+          <button id="tab-login" class="auth-tab">התחברות</button>
+          <button id="tab-signup" class="auth-tab active">הרשמה</button>
         </div>
 
         <!-- Login Form -->
-        <div id="login-form" class="auth-form">
+        <div id="login-form" class="auth-form hidden">
           <div class="form-group">
             <label for="login-username">שם משתמש</label>
-            <input type="text" id="login-username" placeholder="שם משתמש">
+            <input type="text" id="login-username" placeholder="שם משתמש" pattern="[a-zA-Z0-9]+" title="רק אותיות אנגליות ומספרים" required>
           </div>
           <div class="form-group">
             <label for="login-password">סיסמה</label>
@@ -77,10 +77,10 @@
         </div>
 
         <!-- Signup Form -->
-        <div id="signup-form" class="auth-form hidden">
+        <div id="signup-form" class="auth-form">
           <div class="form-group">
             <label for="signup-username">שם משתמש</label>
-            <input type="text" id="signup-username" placeholder="שם משתמש">
+            <input type="text" id="signup-username" placeholder="שם משתמש (אותיות אנגליות ומספרים בלבד)" pattern="[a-zA-Z0-9]+" title="רק אותיות אנגליות ומספרים" required>
           </div>
           <div class="form-group">
             <label for="signup-password">סיסמה</label>
@@ -112,6 +112,15 @@
       <div class="user-info">
         <span id="user-email"></span>
         <span class="credits-badge">קרדיטים: <strong id="user-credits">0</strong></span>
+        <button id="load-last-session-btn" class="btn-load-session" title="טען סשן אחרון">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+            <path d="M3 21v-5h5"></path>
+          </svg>
+          <span class="load-session-text">טען סשן אחרון</span>
+        </button>
       </div>
       <button id="logout-btn" class="btn btn-secondary btn-small">
         <span class="logout-text">התנתקות</span>
@@ -153,10 +162,13 @@
       <p class="subtitle">ענו על כמה שאלות כדי שנבין מה מייחד את העסק שלכם</p>
       <div id="chat-messages"></div>
       <div class="chat-input">
-        <input type="text" id="user-input" placeholder="הקלידו את התשובה שלכם...">
+        <textarea rows="4" id="user-input" placeholder="הקלידו את התשובה שלכם..."></textarea>
         <button id="send-answer" class="btn btn-primary">שלחו</button>
       </div>
-      <button id="generate-btn" class="btn btn-success hidden">צרו מצגות</button>
+      <button id="generate-btn" class="btn btn-success hidden" style="position: relative;">
+        צרו מצגות
+        <span class="generate-tooltip">אפשר ליצור הצגה עצמית!</span>
+      </button>
     </section>
 
     <!-- Loading State -->
@@ -177,6 +189,18 @@
             <span class="era-tag">המומחה הכי גדול</span>
           </div>
           <div class="content"></div>
+          <div class="rating-container">
+            <p class="rating-label">דרגו את המצגת:</p>
+            <div class="stars" data-style="80s">
+              <span class="star" data-rating="1">★</span>
+              <span class="star" data-rating="2">★</span>
+              <span class="star" data-rating="3">★</span>
+              <span class="star" data-rating="4">★</span>
+              <span class="star" data-rating="5">★</span>
+            </div>
+            <p class="rating-thank-you hidden">תודה על הדירוג!</p>
+          </div>
+          <button class="btn-download" data-style="80s">הורד PDF</button>
         </div>
         <div class="presentation" id="pres-2000s">
           <div class="pres-header">
@@ -184,6 +208,18 @@
             <span class="era-tag">זול ואמין</span>
           </div>
           <div class="content"></div>
+          <div class="rating-container">
+            <p class="rating-label">דרגו את המצגת:</p>
+            <div class="stars" data-style="2000s">
+              <span class="star" data-rating="1">★</span>
+              <span class="star" data-rating="2">★</span>
+              <span class="star" data-rating="3">★</span>
+              <span class="star" data-rating="4">★</span>
+              <span class="star" data-rating="5">★</span>
+            </div>
+            <p class="rating-thank-you hidden">תודה על הדירוג!</p>
+          </div>
+          <button class="btn-download" data-style="2000s">הורד PDF</button>
         </div>
         <div class="presentation recommended" id="pres-2020s">
           <div class="pres-header">
@@ -191,12 +227,27 @@
             <span class="era-tag recommended-tag">אחריות על תוצאה</span>
           </div>
           <div class="content"></div>
+          <div class="rating-container">
+            <p class="rating-label">דרגו את המצגת:</p>
+            <div class="stars" data-style="2020s">
+              <span class="star" data-rating="1">★</span>
+              <span class="star" data-rating="2">★</span>
+              <span class="star" data-rating="3">★</span>
+              <span class="star" data-rating="4">★</span>
+              <span class="star" data-rating="5">★</span>
+            </div>
+            <p class="rating-thank-you hidden">תודה על הדירוג!</p>
+          </div>
+          <button class="btn-download" data-style="2020s">הורד PDF</button>
         </div>
       </div>
 
       <div class="disclaimer">האתר אינו אחראי על התכנים והתוצאות. באחריות המשתמש לוודא את אמינות התוצאות, או להתאים את ההצעה של הבינה מלאכותית למציאות</div>
 
-      <button id="start-over" class="btn btn-secondary">התחילו מחדש</button>
+      <div class="action-buttons">
+        <button id="download-all" class="btn btn-primary">הורד את כל המצגות כ-PDF</button>
+        <button id="start-over" class="btn btn-secondary">התחילו מחדש</button>
+      </div>
     </section>
   </main>
 
@@ -209,6 +260,7 @@
         <a href="/negishut.html">הצהרת נגישות</a>
       </li>
     </ul>
+    <p style="font-size: 0.7em; color: #555; margin-top: 1rem;">גרסה 0.0.2.0</p>
   </footer>
 
   <script src="app.js"></script>

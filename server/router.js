@@ -4,7 +4,9 @@ const { interviewerPrompt } = require('./agents/interviewer.js');
 const { agent80sPrompt } = require('./agents/agent80s.js');
 const { agent2000sPrompt } = require('./agents/agent2000s.js');
 const { agent2020sPrompt } = require('./agents/agent2020s.js');
-const { verifyToken, getUserCredits, deductCredit, initializeUserCredits } = require('./supabase.js');
+const { verifyToken, getUserCredits, deductCredit, initializeUserCredits, saveUserSession, getUserSessions, getSession, saveRating, getRating } = require('./supabase.js');
+const { generatePresentationPDF } = require('./pdfGenerator.js');
+const { logError, logInfo } = require('./logger.js');
 
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -76,6 +78,35 @@ async function handleRequest(req, res) {
       return sendJSON(res, { credits });
     }
 
+    // GET /api/user/sessions - Get user's past sessions
+    if (method === 'GET' && path === '/api/user/sessions') {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
+      const sessions = await getUserSessions(user.id);
+      return sendJSON(res, { sessions });
+    }
+
+    // POST /api/session/load - Load a previous session
+    if (method === 'POST' && path === '/api/session/load') {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
+      const body = await parseBody(req);
+      const { sessionId } = body;
+
+      if (!sessionId) {
+        return sendError(res, 400, 'חסר מזהה סשן');
+      }
+
+      const session = await getSession(user.id, sessionId);
+      if (!session) {
+        return sendError(res, 404, 'סשן לא נמצא');
+      }
+
+      return sendJSON(res, { session });
+    }
+
     // POST /api/session - Create new session
     if (method === 'POST' && path === '/api/session') {
       const session = {
@@ -103,6 +134,20 @@ async function handleRequest(req, res) {
         createdAt: new Date().toISOString()
       };
       storage.append('profiles.json', profile);
+
+      // If authenticated, also save to Supabase
+      try {
+        const authHeader = req.headers.authorization;
+        const user = await verifyToken(authHeader);
+        if (user) {
+          await saveUserSession(user.id, sessionId, {
+            business_profile: { profession, description }
+          });
+        }
+      } catch (saveErr) {
+        logError('business-info - Supabase save', saveErr);
+      }
+
       return sendJSON(res, { success: true });
     }
 
@@ -162,6 +207,19 @@ async function handleRequest(req, res) {
         c => c.sessionId === sessionId,
         { messages: conversation.messages }
       );
+
+      // If authenticated, also save to Supabase
+      try {
+        const authHeader = req.headers.authorization;
+        const user = await verifyToken(authHeader);
+        if (user) {
+          await saveUserSession(user.id, sessionId, {
+            conversation: { messages: conversation.messages }
+          });
+        }
+      } catch (saveErr) {
+        logError('respond - Supabase save', saveErr);
+      }
 
       const isComplete = aiResponse.toLowerCase().includes('enough information') ||
                          aiResponse.toLowerCase().includes('generate your presentations') ||
@@ -230,15 +288,71 @@ async function handleRequest(req, res) {
 
       presentations.forEach(p => storage.append('presentations.json', p));
 
+      // Save presentations to Supabase
+      try {
+        await saveUserSession(user.id, sessionId, {
+          presentations: presentations.map(p => ({ era: p.era, content: p.content }))
+        });
+      } catch (saveErr) {
+        logError('generate - Supabase save', saveErr);
+      }
+
       return sendJSON(res, {
         presentations,
         remainingCredits: deductResult.remainingCredits
       });
     }
 
+    // POST /api/presentations/:sessionId/rate - Rate a presentation
+    if (method === 'POST' && path.match(/^\/api\/presentations\/[^\/]+\/rate$/)) {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
+      const sessionId = path.split('/')[3];
+      const body = await parseBody(req);
+      const { style, rating, feedback } = body;
+
+      if (!style || !rating || rating < 1 || rating > 5) {
+        return sendError(res, 400, 'נתונים לא תקינים');
+      }
+
+      const success = await saveRating(user.id, sessionId, style, rating, feedback);
+      if (!success) {
+        return sendError(res, 500, 'שגיאה בשמירת הדירוג');
+      }
+
+      return sendJSON(res, { success: true, message: 'תודה על הדירוג!' });
+    }
+
     // GET /api/presentations/:sessionId - Get presentations
     if (method === 'GET' && path.startsWith('/api/presentations/')) {
-      const sessionId = path.split('/').pop();
+      const pathParts = path.split('/');
+      const sessionId = pathParts[pathParts.length - 1].split('?')[0];
+
+      // Check if PDF download is requested
+      if (url.searchParams.has('format') && url.searchParams.get('format') === 'pdf') {
+        const style = url.searchParams.get('style') || 'all';
+        const presentations = storage.findAll('presentations.json', p => p.sessionId === sessionId);
+
+        if (!presentations || presentations.length === 0) {
+          return sendError(res, 404, 'מצגות לא נמצאו');
+        }
+
+        try {
+          const pdfBuffer = await generatePresentationPDF(presentations, style);
+          res.writeHead(200, {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="bizprez-${style}.pdf"`,
+            'Content-Length': pdfBuffer.length
+          });
+          res.end(pdfBuffer);
+          return true;
+        } catch (err) {
+          console.error('PDF generation error:', err);
+          return sendError(res, 500, 'שגיאה ביצירת PDF');
+        }
+      }
+
       const presentations = storage.findAll('presentations.json', p => p.sessionId === sessionId);
       return sendJSON(res, { presentations });
     }

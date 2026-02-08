@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4"
   }
 }

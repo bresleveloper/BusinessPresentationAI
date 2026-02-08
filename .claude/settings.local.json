@@ -17,7 +17,8 @@
       "Bash(npx kill-port:*)",
       "Bash(ren:*)",
       "Bash(powershell:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

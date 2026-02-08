@@ -5,7 +5,7 @@
 }
 
 html {
-  font-size: 136%;
+  font-size: 116%;
 }
 
 body {
@@ -36,7 +36,7 @@ header {
 }
 
 header h1 {
-  font-size: 2.5rem;
+  font-size: 2.1rem;
   color: #fff;
   margin-bottom: 0.5rem;
 }
@@ -66,7 +66,7 @@ main {
 h2 {
   color: #fff;
   margin-bottom: 0.5rem;
-  font-size: 34px;
+  font-size: 29px;
 }
 
 .subtitle {
@@ -209,6 +209,38 @@ h2 {
   font-weight: 700;
 }
 
+.btn-load-session {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(74, 158, 255, 0.2);
+  border: 1px solid rgba(74, 158, 255, 0.3);
+  border-radius: 6px;
+  color: #4a9eff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-load-session:hover {
+  background: rgba(74, 158, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-load-session svg {
+  flex-shrink: 0;
+}
+
+.btn-load-session.loading {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.btn-load-session.loading svg {
+  animation: spin 1s linear infinite;
+}
+
 /* Logout button icon/text toggle */
 .logout-icon {
   display: none;
@@ -255,14 +287,17 @@ h2 {
 .tooltip-wrapper .tooltip-text {
   visibility: hidden;
   opacity: 0;
-  background: #333;
+  /* background: #333; */
+  background: #ac3b3b;
   color: #fff;
   text-align: center;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   position: absolute;
-  bottom: 100%;
-  left: 50%;
+  /* bottom: 100%;
+  left: 50%; */
+  bottom: 40%;
+  left: -80%;
   transform: translateX(-50%);
   margin-bottom: 0.5rem;
   white-space: nowrap;
@@ -319,7 +354,7 @@ textarea:focus {
 
 textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
 }
 
 /* Button Styles */
@@ -359,6 +394,40 @@ textarea {
 
 .btn-success:hover {
   box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+}
+
+.btn-success.pulse-animation {
+  animation: pulse 1.5s ease-in-out 3;
+}
+
+.btn-success .generate-tooltip {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4ade80;
+  color: #000;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.btn-success .generate-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #4ade80;
+}
+
+.btn-success .generate-tooltip.show {
+  opacity: 1;
 }
 
 .btn-secondary {
@@ -456,6 +525,17 @@ textarea {
   to { transform: rotate(360deg); }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(74, 222, 128, 0.6);
+  }
+}
+
 /* Presentations Grid */
 #presentations {
   display: grid;
@@ -518,6 +598,71 @@ textarea {
   white-space: pre-wrap;
 }
 
+.btn-download {
+  display: block;
+  width: calc(100% - 3rem);
+  margin: 0 1.5rem 1.5rem 1.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #4a9eff 0%, #2d7ed9 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(74, 158, 255, 0.4);
+}
+
+.rating-container {
+  padding: 1rem 1.5rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rating-label {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 0.5rem;
+}
+
+.stars {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.star {
+  color: #666;
+  transition: color 0.2s, transform 0.2s;
+  user-select: none;
+}
+
+.star:hover {
+  transform: scale(1.2);
+}
+
+.star.filled {
+  color: #fbbf24;
+}
+
+.star.selected {
+  color: #fbbf24;
+}
+
+.rating-thank-you {
+  color: #4ade80;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
 #results h2 {
   text-align: center;
 }
@@ -527,9 +672,16 @@ textarea {
   margin-bottom: 2rem;
 }
 
-#start-over {
-  display: block;
-  margin: 0 auto;
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.action-buttons .btn {
+  flex: 0 1 auto;
 }
 
 /* Footer */
@@ -537,7 +689,7 @@ footer {
   text-align: center;
   padding: 2rem;
   color: #666;
-  font-size: 28px;
+  font-size: 24px;
 }
 footer a {color: #4a9eff;}
 
@@ -561,7 +713,7 @@ footer a {color: #4a9eff;}
   }
 
   header h1 {
-    font-size: 2rem;
+    font-size: 1.7rem;
   }
 
   #presentations {
@@ -602,6 +754,16 @@ footer a {color: #4a9eff;}
   }
 
   #logout-btn {
+    padding: 0.5rem;
+    min-width: auto;
+  }
+
+  /* Hide load session text on mobile */
+  .load-session-text {
+    display: none;
+  }
+
+  .btn-load-session {
     padding: 0.5rem;
     min-width: auto;
   }

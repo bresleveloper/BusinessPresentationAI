@@ -43,6 +43,11 @@ async function api(endpoint, method = 'GET', body = null) {
   return data;
 }
 
+// Validate username (alphanumeric only)
+function validateUsername(username) {
+  return /^[a-zA-Z0-9]+$/.test(username);
+}
+
 // Convert username to fake email for Supabase
 function usernameToEmail(username) {
   return `${username.toLowerCase()}@bizprez.local`;
@@ -56,6 +61,11 @@ async function handleLogin() {
 
   if (!username || !password) {
     showAuthError('אנא מלאו שם משתמש וסיסמה');
+    return;
+  }
+
+  if (!validateUsername(username)) {
+    showAuthError('שם משתמש יכול להכיל רק אותיות אנגליות ומספרים');
     return;
   }
 
@@ -88,6 +98,11 @@ async function handleSignup() {
 
   if (!username || !password) {
     showAuthError('אנא מלאו שם משתמש וסיסמה');
+    return;
+  }
+
+  if (!validateUsername(username)) {
+    showAuthError('שם משתמש יכול להכיל רק אותיות אנגליות ומספרים');
     return;
   }
 
@@ -231,6 +246,9 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     accessToken = session.access_token;
     updateAuthUI();
 
+    // Save last login timestamp
+    localStorage.setItem('lastLogin', Date.now());
+
     // Initialize credits for new users or fetch existing
     if (event === 'SIGNED_IN') {
       await initCredits();
@@ -344,6 +362,16 @@ async function sendAnswer() {
     if (response.complete) {
       interviewComplete = true;
       generateBtn.classList.remove('hidden');
+
+      // Show tooltip and pulse animation
+      generateBtn.classList.add('pulse-animation');
+      const tooltip = generateBtn.querySelector('.generate-tooltip');
+      if (tooltip) {
+        tooltip.classList.add('show');
+        setTimeout(() => {
+          tooltip.classList.remove('show');
+        }, 3000);
+      }
     }
 
   } catch (err) {
@@ -408,6 +436,86 @@ function startOver() {
   showSection(businessForm);
 }
 
+// Load last session
+async function loadLastSession() {
+  const btn = document.getElementById('load-last-session-btn');
+
+  try {
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    // Fetch user's sessions
+    const data = await api('/api/user/sessions');
+    console.log('Sessions data:', data);
+
+    if (!data.sessions || data.sessions.length === 0) {
+      alert('לא נמצאו סשנים קודמים.\n\nצרו סשן חדש על ידי מילוי טופס העסק והשלמת הראיון.');
+      return;
+    }
+
+    // Get the most recent session
+    const lastSession = data.sessions[0];
+
+    // Load session data
+    sessionId = lastSession.session_id;
+
+    // Load business profile if exists
+    if (lastSession.business_profile) {
+      const profile = lastSession.business_profile;
+      document.getElementById('profession').value = profile.profession || '';
+      document.getElementById('description').value = profile.description || '';
+    }
+
+    // Load conversation if exists
+    if (lastSession.conversation && lastSession.conversation.messages) {
+      chatMessages.innerHTML = '';
+      lastSession.conversation.messages.forEach(msg => {
+        // Skip the initial system message with profession/description
+        if (msg.role !== 'user' || !msg.content.includes('My profession:')) {
+          displayMessage(msg.role === 'user' ? 'user' : 'assistant', msg.content);
+        }
+      });
+
+      // Check if interview was complete
+      const lastMessage = lastSession.conversation.messages[lastSession.conversation.messages.length - 1];
+      if (lastMessage && (
+        lastMessage.content.includes('מספיק מידע') ||
+        lastMessage.content.includes('enough information')
+      )) {
+        interviewComplete = true;
+        generateBtn.classList.remove('hidden');
+      }
+
+      showSection(interviewSection);
+    }
+
+    // Load presentations if exist
+    if (lastSession.presentations && lastSession.presentations.length > 0) {
+      lastSession.presentations.forEach(pres => {
+        const presDiv = document.getElementById(`pres-${pres.era}`);
+        if (presDiv) {
+          presDiv.querySelector('.content').textContent = pres.content;
+        }
+      });
+
+      showSection(resultsSection);
+    } else if (lastSession.conversation) {
+      showSection(interviewSection);
+    } else if (lastSession.business_profile) {
+      showSection(businessForm);
+    }
+
+    // Session loaded successfully (no alert needed)
+
+  } catch (err) {
+    console.error('Error loading session:', err);
+    alert('שגיאה בטעינת הסשן: ' + err.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
 // Event Listeners
 document.getElementById('start-interview').addEventListener('click', startInterview);
 document.getElementById('send-answer').addEventListener('click', sendAnswer);
@@ -419,6 +527,7 @@ document.getElementById('login-btn').addEventListener('click', handleLogin);
 document.getElementById('signup-btn').addEventListener('click', handleSignup);
 document.getElementById('google-login-btn').addEventListener('click', handleGoogleLogin);
 document.getElementById('logout-btn').addEventListener('click', handleLogout);
+document.getElementById('load-last-session-btn').addEventListener('click', loadLastSession);
 
 // Login form enter key support
 document.getElementById('login-username').addEventListener('keypress', (e) => {
@@ -452,5 +561,97 @@ disclaimerCheckbox.addEventListener('change', () => {
 userInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     sendAnswer();
+  }
+});
+
+// PDF Download functionality
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('btn-download')) {
+    const style = e.target.getAttribute('data-style');
+    downloadPDF(style);
+  }
+});
+
+document.getElementById('download-all')?.addEventListener('click', () => {
+  downloadPDF('all');
+});
+
+function downloadPDF(style) {
+  if (!sessionId) {
+    alert('לא נמצא מזהה סשן');
+    return;
+  }
+
+  const url = `/api/presentations/${sessionId}?format=pdf&style=${style}`;
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `bizprez-${style}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Star rating functionality
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('star')) {
+    const starsContainer = e.target.parentElement;
+    const style = starsContainer.getAttribute('data-style');
+    const rating = parseInt(e.target.getAttribute('data-rating'));
+    const stars = starsContainer.querySelectorAll('.star');
+
+    // Highlight selected stars
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.add('selected');
+      } else {
+        star.classList.remove('selected');
+      }
+    });
+
+    // Submit rating
+    try {
+      await api(`/api/presentations/${sessionId}/rate`, 'POST', {
+        style,
+        rating
+      });
+
+      // Show thank you message
+      const thankYou = starsContainer.parentElement.querySelector('.rating-thank-you');
+      const label = starsContainer.parentElement.querySelector('.rating-label');
+      if (thankYou && label) {
+        label.classList.add('hidden');
+        starsContainer.classList.add('hidden');
+        thankYou.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error('Error submitting rating:', err);
+    }
+  }
+});
+
+// Star hover effect
+document.addEventListener('mouseover', (e) => {
+  if (e.target.classList.contains('star')) {
+    const stars = e.target.parentElement.querySelectorAll('.star');
+    const hoverRating = parseInt(e.target.getAttribute('data-rating'));
+
+    stars.forEach((star, index) => {
+      if (index < hoverRating) {
+        star.classList.add('filled');
+      } else {
+        star.classList.remove('filled');
+      }
+    });
+  }
+});
+
+document.addEventListener('mouseout', (e) => {
+  if (e.target.classList.contains('star')) {
+    const stars = e.target.parentElement.querySelectorAll('.star');
+    stars.forEach(star => {
+      if (!star.classList.contains('selected')) {
+        star.classList.remove('filled');
+      }
+    });
   }
 });
