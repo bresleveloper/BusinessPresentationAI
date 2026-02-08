@@ -1,4 +1,3 @@
-const storage = require('./storage.js');
 const { chat } = require('./ai.js');
 const { interviewerPrompt } = require('./agents/interviewer.js');
 const { agent80sPrompt } = require('./agents/agent80s.js');
@@ -6,7 +5,6 @@ const { agent2000sPrompt } = require('./agents/agent2000s.js');
 const { agent2020sPrompt } = require('./agents/agent2020s.js');
 const { verifyToken, getUserCredits, deductCredit, initializeUserCredits, saveUserSession, getUserSessions, getSession, saveRating, getRating } = require('./supabase.js');
 const { generatePresentationPDF } = require('./pdfGenerator.js');
-const { logError, logInfo } = require('./logger.js');
 
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -109,16 +107,22 @@ async function handleRequest(req, res) {
 
     // POST /api/session - Create new session
     if (method === 'POST' && path === '/api/session') {
-      const session = {
-        id: generateUUID(),
-        createdAt: new Date().toISOString()
-      };
-      storage.append('sessions.json', session);
-      return sendJSON(res, { sessionId: session.id });
+      const user = await authenticate(req, res);
+      if (!user) return;
+
+      const sessionId = generateUUID();
+      const saved = await saveUserSession(user.id, sessionId, {});
+      if (!saved) {
+        return sendError(res, 500, 'שגיאה ביצירת סשן');
+      }
+      return sendJSON(res, { sessionId });
     }
 
     // POST /api/business-info - Submit business description
     if (method === 'POST' && path === '/api/business-info') {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
       const body = await parseBody(req);
       const { sessionId, profession, description } = body;
 
@@ -126,26 +130,12 @@ async function handleRequest(req, res) {
         return sendError(res, 400, 'חסרים שדות נדרשים');
       }
 
-      const profile = {
-        sessionId,
-        profession,
-        description,
-        uniqueQualities: '',
-        createdAt: new Date().toISOString()
-      };
-      storage.append('profiles.json', profile);
+      const saved = await saveUserSession(user.id, sessionId, {
+        business_profile: { profession, description }
+      });
 
-      // If authenticated, also save to Supabase
-      try {
-        const authHeader = req.headers.authorization;
-        const user = await verifyToken(authHeader);
-        if (user) {
-          await saveUserSession(user.id, sessionId, {
-            business_profile: { profession, description }
-          });
-        }
-      } catch (saveErr) {
-        logError('business-info - Supabase save', saveErr);
+      if (!saved) {
+        return sendError(res, 500, 'שגיאה בשמירת פרטי העסק');
       }
 
       return sendJSON(res, { success: true });
@@ -153,6 +143,9 @@ async function handleRequest(req, res) {
 
     // POST /api/interview - Start interview, get first question
     if (method === 'POST' && path === '/api/interview') {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
       const body = await parseBody(req);
       const { sessionId } = body;
 
@@ -160,30 +153,37 @@ async function handleRequest(req, res) {
         return sendError(res, 400, 'חסר מזהה סשן');
       }
 
-      const profile = storage.findOne('profiles.json', p => p.sessionId === sessionId);
-      if (!profile) {
+      const session = await getSession(user.id, sessionId);
+      if (!session || !session.business_profile) {
         return sendError(res, 404, 'פרופיל לא נמצא');
       }
 
+      const profile = session.business_profile;
       const userMessage = `My profession: ${profile.profession}\n\nWhat I do: ${profile.description}`;
       const messages = [{ role: 'user', content: userMessage }];
 
       const aiResponse = await chat(interviewerPrompt, messages);
 
       const conversation = {
-        sessionId,
         messages: [
           { role: 'user', content: userMessage },
           { role: 'assistant', content: aiResponse }
         ]
       };
-      storage.append('conversations.json', conversation);
+
+      const saved = await saveUserSession(user.id, sessionId, { conversation });
+      if (!saved) {
+        return sendError(res, 500, 'שגיאה בשמירת השיחה');
+      }
 
       return sendJSON(res, { message: aiResponse });
     }
 
     // POST /api/respond - Submit answer to interview question
     if (method === 'POST' && path === '/api/respond') {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
       const body = await parseBody(req);
       const { sessionId, message } = body;
 
@@ -191,41 +191,30 @@ async function handleRequest(req, res) {
         return sendError(res, 400, 'חסרים שדות נדרשים');
       }
 
-      const conversation = storage.findOne('conversations.json', c => c.sessionId === sessionId);
-      if (!conversation) {
+      const session = await getSession(user.id, sessionId);
+      if (!session || !session.conversation || !session.conversation.messages) {
         return sendError(res, 404, 'שיחה לא נמצאה');
       }
 
-      conversation.messages.push({ role: 'user', content: message });
+      const messages = session.conversation.messages;
+      messages.push({ role: 'user', content: message });
 
-      const profile = storage.findOne('profiles.json', p => p.sessionId === sessionId);
-      const aiResponse = await chat(interviewerPrompt, conversation.messages);
+      const aiResponse = await chat(interviewerPrompt, messages);
+      messages.push({ role: 'assistant', content: aiResponse });
 
-      conversation.messages.push({ role: 'assistant', content: aiResponse });
+      const saved = await saveUserSession(user.id, sessionId, {
+        conversation: { messages }
+      });
 
-      storage.update('conversations.json',
-        c => c.sessionId === sessionId,
-        { messages: conversation.messages }
-      );
-
-      // If authenticated, also save to Supabase
-      try {
-        const authHeader = req.headers.authorization;
-        const user = await verifyToken(authHeader);
-        if (user) {
-          await saveUserSession(user.id, sessionId, {
-            conversation: { messages: conversation.messages }
-          });
-        }
-      } catch (saveErr) {
-        logError('respond - Supabase save', saveErr);
+      if (!saved) {
+        return sendError(res, 500, 'שגיאה בשמירת השיחה');
       }
 
       const isComplete = aiResponse.toLowerCase().includes('enough information') ||
                          aiResponse.toLowerCase().includes('generate your presentations') ||
                          aiResponse.includes('מספיק מידע') ||
                          aiResponse.includes('יצירת המצגות') ||
-                         conversation.messages.filter(m => m.role === 'user').length >= 4;
+                         messages.filter(m => m.role === 'user').length >= 4;
 
       return sendJSON(res, { message: aiResponse, complete: isComplete });
     }
@@ -249,12 +238,13 @@ async function handleRequest(req, res) {
         return sendError(res, 400, 'חסר מזהה סשן');
       }
 
-      const profile = storage.findOne('profiles.json', p => p.sessionId === sessionId);
-      const conversation = storage.findOne('conversations.json', c => c.sessionId === sessionId);
-
-      if (!profile) {
+      const session = await getSession(user.id, sessionId);
+      if (!session || !session.business_profile) {
         return sendError(res, 404, 'פרופיל לא נמצא');
       }
+
+      const profile = session.business_profile;
+      const conversation = session.conversation;
 
       // Build context from profile and conversation
       let context = `Business: ${profile.profession}\n\nDescription: ${profile.description}`;
@@ -281,24 +271,18 @@ async function handleRequest(req, res) {
       }
 
       const presentations = [
-        { sessionId, era: '80s', content: pres80s, createdAt: new Date().toISOString() },
-        { sessionId, era: '2000s', content: pres2000s, createdAt: new Date().toISOString() },
-        { sessionId, era: '2020s', content: pres2020s, createdAt: new Date().toISOString() }
+        { era: '80s', content: pres80s, createdAt: new Date().toISOString() },
+        { era: '2000s', content: pres2000s, createdAt: new Date().toISOString() },
+        { era: '2020s', content: pres2020s, createdAt: new Date().toISOString() }
       ];
 
-      presentations.forEach(p => storage.append('presentations.json', p));
-
-      // Save presentations to Supabase
-      try {
-        await saveUserSession(user.id, sessionId, {
-          presentations: presentations.map(p => ({ era: p.era, content: p.content }))
-        });
-      } catch (saveErr) {
-        logError('generate - Supabase save', saveErr);
+      const saved = await saveUserSession(user.id, sessionId, { presentations });
+      if (!saved) {
+        return sendError(res, 500, 'שגיאה בשמירת המצגות');
       }
 
       return sendJSON(res, {
-        presentations,
+        presentations: presentations.map(p => ({ ...p, sessionId })),
         remainingCredits: deductResult.remainingCredits
       });
     }
@@ -326,17 +310,22 @@ async function handleRequest(req, res) {
 
     // GET /api/presentations/:sessionId - Get presentations
     if (method === 'GET' && path.startsWith('/api/presentations/')) {
+      const user = await authenticate(req, res);
+      if (!user) return;
+
       const pathParts = path.split('/');
       const sessionId = pathParts[pathParts.length - 1].split('?')[0];
+
+      const session = await getSession(user.id, sessionId);
+      if (!session || !session.presentations || session.presentations.length === 0) {
+        return sendError(res, 404, 'מצגות לא נמצאו');
+      }
+
+      const presentations = session.presentations;
 
       // Check if PDF download is requested
       if (url.searchParams.has('format') && url.searchParams.get('format') === 'pdf') {
         const style = url.searchParams.get('style') || 'all';
-        const presentations = storage.findAll('presentations.json', p => p.sessionId === sessionId);
-
-        if (!presentations || presentations.length === 0) {
-          return sendError(res, 404, 'מצגות לא נמצאו');
-        }
 
         try {
           const pdfBuffer = await generatePresentationPDF(presentations, style);
@@ -353,7 +342,6 @@ async function handleRequest(req, res) {
         }
       }
 
-      const presentations = storage.findAll('presentations.json', p => p.sessionId === sessionId);
       return sendJSON(res, { presentations });
     }
 

@@ -576,19 +576,40 @@ document.getElementById('download-all')?.addEventListener('click', () => {
   downloadPDF('all');
 });
 
-function downloadPDF(style) {
+async function downloadPDF(style) {
   if (!sessionId) {
     alert('לא נמצא מזהה סשן');
     return;
   }
 
-  const url = `/api/presentations/${sessionId}?format=pdf&style=${style}`;
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `bizprez-${style}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const response = await fetch(
+      `/api/presentations/${sessionId}?format=pdf&style=${style}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'שגיאה בהורדת PDF');
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bizprez-${style}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('שגיאה בהורדת PDF: ' + err.message);
+    console.error(err);
+  }
 }
 
 // Star rating functionality

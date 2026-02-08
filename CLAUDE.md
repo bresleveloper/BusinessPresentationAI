@@ -19,8 +19,7 @@ npm start      # Start server on http://localhost:13001
 - `server/index.js` - HTTP server setup, static file serving with directory traversal protection
 - `server/router.js` - API route handlers for auth, interview, and generation endpoints
 - `server/ai.js` - OpenRouter API client using Grok model (`x-ai/grok-4.1-fast`)
-- `server/storage.js` - File-based JSON storage for sessions, profiles, conversations, presentations
-- `server/supabase.js` - Supabase auth verification and credit management
+- `server/supabase.js` - Supabase client for auth, sessions, credits, and ratings
 
 **AI Agents (`server/agents/`):**
 - `interviewer.js` - Discovery interview agent (2-3 questions, Hebrew prompts)
@@ -35,22 +34,27 @@ npm start      # Start server on http://localhost:13001
 ## Data Flow
 
 1. User authenticates via Supabase (username converted to email internally)
-2. Session created with UUID
-3. User enters business info → stored in `data/profiles.json`
-4. Interview: AI asks questions → conversation stored in `data/conversations.json`
-5. Generation: All 3 agents run in parallel → results stored in `data/presentations.json`
+2. Session created with UUID → stored in Supabase `user_sessions` table
+3. User enters business info → stored as JSONB in `user_sessions.business_profile`
+4. Interview: AI asks questions → conversation stored as JSONB in `user_sessions.conversation`
+5. Generation: All 3 agents run in parallel → results stored as JSONB in `user_sessions.presentations`
 6. Credit deducted after successful generation
 
 ## API Endpoints
+
+All endpoints require authentication (Bearer token).
 
 - `POST /api/session` - Create session
 - `POST /api/business-info` - Submit business description
 - `POST /api/interview` - Start interview
 - `POST /api/respond` - Submit answer, get next question
-- `POST /api/generate` - Generate presentations (requires auth, costs 1 credit)
-- `GET /api/presentations/:sessionId` - Get generated presentations
+- `POST /api/generate` - Generate presentations (costs 1 credit)
+- `GET /api/presentations/:sessionId` - Get generated presentations (supports `?format=pdf&style=`)
+- `POST /api/presentations/:sessionId/rate` - Rate a presentation
 - `GET /api/user/credits` - Get credit balance
 - `POST /api/user/init-credits` - Initialize credits for new user
+- `GET /api/user/sessions` - Get user's past sessions
+- `POST /api/session/load` - Load a previous session
 
 ## Environment Variables
 
@@ -64,6 +68,8 @@ SUPABASE_SERVICE_KEY=<service-role-key>
 
 ## Database (Supabase)
 
+- `user_sessions` - Session data with business_profile, conversation, presentations (JSONB)
 - `user_credits` - User credit balances (3 free on signup)
 - `credit_transactions` - Audit log of credit changes
-- Schema in `supabase-schema.sql`
+- `presentation_ratings` - User ratings and feedback per presentation style
+- Schemas in `supabase-schema.sql`, `supabase-sessions-schema.sql`, `supabase-ratings-schema.sql`
